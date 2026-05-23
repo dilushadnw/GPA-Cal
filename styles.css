@@ -180,6 +180,22 @@ tbody tr:hover {
   font-family: inherit;
 }
 
+.fix-btn {
+  border: 1px solid var(--grid);
+  background: #fff;
+  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.fix-btn.is-fixed {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: #7b3b31;
+}
+
 .actions {
   margin-top: 18px;
   display: flex;
@@ -187,6 +203,74 @@ tbody tr:hover {
   gap: 12px;
   align-items: center;
   justify-content: flex-start;
+}
+
+.target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f5ebe2;
+}
+
+.target label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5a4a3e;
+}
+
+.target input {
+  width: 120px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--grid);
+  font-family: inherit;
+}
+
+.auto-fill,
+.auto-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: #f5ebe2;
+}
+
+.auto-fill label,
+.auto-credit label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #5a4a3e;
+}
+
+.auto-fill select,
+.auto-credit select {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--grid);
+  background: #fff;
+  font-family: inherit;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.credit-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 8px 12px;
+  width: 100%;
 }
 
 .btn {

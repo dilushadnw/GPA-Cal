@@ -40,7 +40,104 @@
         <div id="gpaTables"></div>
 
         <div class="actions">
+          <div class="target">
+            <label for="targetGpa">Target GPA</label>
+            <input id="targetGpa" type="number" step="0.01" min="0" max="4" placeholder="e.g. 3.20" />
+            <div class="status" id="targetStatus">Set a target GPA to auto fill</div>
+          </div>
+          <div class="auto-fill">
+            <label for="autoGrade">Auto fill grade</label>
+            <select id="autoGrade">
+              <option value="">Select</option>
+              <option value="A+">A+</option>
+              <option value="A">A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="C-">C-</option>
+              <option value="D+">D+</option>
+              <option value="D">D</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+          <div class="auto-credit">
+            <label class="checkbox">
+              <input id="useCreditMap" type="checkbox" />
+              Use per-credit grades
+            </label>
+            <div class="credit-map">
+              <label for="credit4">Credit 4</label>
+              <select id="credit4">
+                <option value="">Select</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D+">D+</option>
+                <option value="D">D</option>
+                <option value="F">F</option>
+              </select>
+              <label for="credit3">Credit 3</label>
+              <select id="credit3">
+                <option value="">Select</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D+">D+</option>
+                <option value="D">D</option>
+                <option value="F">F</option>
+              </select>
+              <label for="credit2">Credit 2</label>
+              <select id="credit2">
+                <option value="">Select</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D+">D+</option>
+                <option value="D">D</option>
+                <option value="F">F</option>
+              </select>
+              <label for="credit1">Credit 1</label>
+              <select id="credit1">
+                <option value="">Select</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B">B</option>
+                <option value="B-">B-</option>
+                <option value="C+">C+</option>
+                <option value="C">C</option>
+                <option value="C-">C-</option>
+                <option value="D+">D+</option>
+                <option value="D">D</option>
+                <option value="F">F</option>
+              </select>
+            </div>
+          </div>
           <button class="btn" id="calcGpa">Calculate GPA</button>
+          <button class="btn" id="autoFill" type="button">Auto Fill to Target</button>
+          <button class="btn btn--ghost" id="clearAutoFill" type="button">Clear Auto Fill</button>
           <button class="btn btn--ghost" id="resetGpa" type="button">Reset</button>
           <button class="btn btn--ghost" id="downloadSheet" type="button">Download Marksheet</button>
           <label class="btn btn--ghost" for="uploadSheet">Upload Marksheet</label>

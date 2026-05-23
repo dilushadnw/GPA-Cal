@@ -84,6 +84,9 @@ function renderGpaTables() {
                   ${gradeOptions}
                 </select>
               </td>
+              <td>
+                <button class="fix-btn" type="button" data-code="${subject.code}" aria-pressed="false">Fix</button>
+              </td>
             </tr>
           `;
         })
@@ -110,6 +113,7 @@ function renderGpaTables() {
                   <th>Title</th>
                   <th class="num">Credit</th>
                   <th>Grade</th>
+                  <th>Fixed</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,8 +174,146 @@ function calculateGpa() {
 function resetGpa() {
   document.querySelectorAll(".grade-select").forEach((select) => {
     select.value = "";
+    delete select.dataset.autofill;
   });
   calculateGpa();
+}
+
+function getTargetGpa() {
+  const input = document.getElementById("targetGpa");
+  const value = Number(input.value);
+  return Number.isFinite(value) ? value : null;
+}
+
+function pickNearestGrade(points) {
+  const sorted = [...gradeScale].sort((a, b) => b.points - a.points);
+  let best = sorted[0];
+  let bestDiff = Math.abs(points - best.points);
+  sorted.forEach((grade) => {
+    const diff = Math.abs(points - grade.points);
+    if (diff < bestDiff) {
+      best = grade;
+      bestDiff = diff;
+    }
+  });
+  return best;
+}
+
+function findOptionByLabel(select, label) {
+  return Array.from(select.options).find((option) => option.text === label);
+}
+
+function applyGradeLabel(select, label) {
+  const match = findOptionByLabel(select, label);
+  if (!match) {
+    return false;
+  }
+  select.value = match.value;
+  select.dataset.autofill = "true";
+  return true;
+}
+
+function getCreditOverrides() {
+  return {
+    4: document.getElementById("credit4").value,
+    3: document.getElementById("credit3").value,
+    2: document.getElementById("credit2").value,
+    1: document.getElementById("credit1").value
+  };
+}
+
+function autoFillToTarget() {
+  const target = getTargetGpa();
+  const status = document.getElementById("targetStatus");
+  const preferred = document.getElementById("autoGrade").value;
+  const useCreditMap = document.getElementById("useCreditMap").checked;
+  const creditMap = getCreditOverrides();
+
+  const selects = Array.from(document.querySelectorAll(".grade-select"));
+
+  if (useCreditMap) {
+    let filled = 0;
+    selects.forEach((select) => {
+      if (select.value !== "" || select.dataset.fixed === "true") {
+        return;
+      }
+      const credit = Number(select.dataset.credit) || 0;
+      const label = creditMap[credit];
+      if (label && applyGradeLabel(select, label)) {
+        filled += 1;
+      }
+    });
+    calculateGpa();
+    status.textContent = filled > 0 ? "Auto filled using credit map" : "No credit rules matched";
+    return;
+  }
+
+  if (preferred) {
+    let filled = 0;
+    selects.forEach((select) => {
+      if (select.value !== "" || select.dataset.fixed === "true") {
+        return;
+      }
+      if (applyGradeLabel(select, preferred)) {
+        filled += 1;
+      }
+    });
+    calculateGpa();
+    status.textContent = filled > 0 ? `Auto filled with ${preferred}` : "No empty grades to auto fill";
+    return;
+  }
+
+  if (target === null) {
+    status.textContent = "Enter a valid target GPA or pick a grade";
+    return;
+  }
+
+  let currentCredits = 0;
+  let currentPoints = 0;
+  let remainingCredits = 0;
+
+  selects.forEach((select) => {
+    const credit = Number(select.dataset.credit) || 0;
+    if (select.value === "") {
+      remainingCredits += credit;
+      return;
+    }
+    currentCredits += credit;
+    currentPoints += credit * Number(select.value);
+  });
+
+  if (remainingCredits === 0) {
+    status.textContent = "No empty grades to auto fill";
+    return;
+  }
+
+  const requiredTotalPoints = target * (currentCredits + remainingCredits);
+  const requiredRemainingPoints = requiredTotalPoints - currentPoints;
+  const requiredAverage = requiredRemainingPoints / remainingCredits;
+
+  const chosen = pickNearestGrade(requiredAverage);
+
+  selects.forEach((select) => {
+    if (select.value !== "" || select.dataset.fixed === "true") {
+      return;
+    }
+    select.value = String(chosen.points);
+    select.dataset.autofill = "true";
+  });
+
+  calculateGpa();
+  status.textContent = `Auto filled with ${chosen.label} (avg ${chosen.points.toFixed(2)})`;
+}
+
+function clearAutoFill() {
+  document.querySelectorAll(".grade-select").forEach((select) => {
+    if (select.dataset.autofill === "true") {
+      select.value = "";
+      delete select.dataset.autofill;
+    }
+  });
+  calculateGpa();
+  document.getElementById("targetStatus").textContent = "Auto fill cleared";
 }
 
 function buildMarksheet() {
@@ -277,10 +419,38 @@ calculateGpa();
 
 document.getElementById("calcGpa").addEventListener("click", calculateGpa);
 document.getElementById("resetGpa").addEventListener("click", resetGpa);
+document.getElementById("autoFill").addEventListener("click", autoFillToTarget);
+document.getElementById("clearAutoFill").addEventListener("click", clearAutoFill);
 document.getElementById("downloadSheet").addEventListener("click", downloadMarksheet);
 document.getElementById("uploadSheet").addEventListener("change", handleUpload);
 document.getElementById("gpaTables").addEventListener("change", (event) => {
   if (event.target.matches(".grade-select")) {
     calculateGpa();
+  }
+});
+
+document.getElementById("gpaTables").addEventListener("click", (event) => {
+  const button = event.target.closest(".fix-btn");
+  if (!button) {
+    return;
+  }
+
+  const row = button.closest("tr");
+  const select = row ? row.querySelector(".grade-select") : null;
+  if (!select) {
+    return;
+  }
+
+  const isFixed = select.dataset.fixed === "true";
+  if (isFixed) {
+    delete select.dataset.fixed;
+    button.classList.remove("is-fixed");
+    button.setAttribute("aria-pressed", "false");
+    button.textContent = "Fix";
+  } else {
+    select.dataset.fixed = "true";
+    button.classList.add("is-fixed");
+    button.setAttribute("aria-pressed", "true");
+    button.textContent = "Fixed";
   }
 });
