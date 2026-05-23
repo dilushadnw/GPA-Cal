@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ICT Subjects Credits</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__inner">
+        <p class="eyebrow">BSc Computing</p>
+        <h1>ICT Subjects + Credits</h1>
+        <p class="subtitle">Credits are computed from the 2nd digit of the 4-digit course code.</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <div class="card__head">
+          <h2>GPA Calculator</h2>
+        </div>
+        <p class="note">Select your grade for each subject. GPA is weighted by credits.</p>
+
+        <div class="gpa-summary">
+          <div class="summary-card">
+            <span>Overall GPA</span>
+            <strong id="gpaValue">0.00</strong>
+          </div>
+          <div class="summary-card">
+            <span>Total Credits</span>
+            <strong id="gpaCredits">0</strong>
+          </div>
+          <div class="summary-card">
+            <span>Total Points</span>
+            <strong id="gpaPoints">0.00</strong>
+          </div>
+        </div>
+
+        <div id="gpaTables"></div>
+
+        <div class="actions">
+          <button class="btn" id="calcGpa">Calculate GPA</button>
+          <button class="btn btn--ghost" id="resetGpa" type="button">Reset</button>
+          <button class="btn btn--ghost" id="downloadSheet" type="button">Download Marksheet</button>
+          <label class="btn btn--ghost" for="uploadSheet">Upload Marksheet</label>
+          <input id="uploadSheet" type="file" accept="application/json" hidden />
+          <div class="status" id="sheetStatus">No file loaded</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
