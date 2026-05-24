@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GPA Analysis</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="nav__inner">
+        <div class="brand">MyDegree</div>
+        <div class="nav__links">
+          <a href="index.html">Calculator</a>
+          <a href="analysis.html">Analysis</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero__inner">
+        <p class="eyebrow">BSc Computing</p>
+        <h1>GPA Analysis</h1>
+        <p class="subtitle">Upload your marksheet to see targets, ranges, and required averages.</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <div class="card__head">
+          <h2>Marksheet Analysis</h2>
+        </div>
+        <p class="note">Upload the marksheet JSON from the calculator page.</p>
+
+        <div class="analysis-actions">
+          <label class="btn" for="analysisUpload">Upload Marksheet</label>
+          <input id="analysisUpload" type="file" accept="application/json" hidden />
+          <div class="status" id="analysisStatus">No file loaded</div>
+        </div>
+
+        <div class="analysis" id="analysis">
+          <div class="analysis-grid">
+            <div class="analysis-card">
+              <span>Overall GPA</span>
+              <strong id="analysisGpa">0.00</strong>
+            </div>
+            <div class="analysis-card">
+              <span>Filled Credits</span>
+              <strong id="analysisFilled">0</strong>
+            </div>
+            <div class="analysis-card">
+              <span>Remaining Credits</span>
+              <strong id="analysisRemaining">0</strong>
+            </div>
+            <div class="analysis-card">
+              <span>Best/Worst Possible</span>
+              <strong id="analysisRange">0.00 - 0.00</strong>
+            </div>
+          </div>
+
+          <div class="analysis-wide">
+            <div class="analysis-panel">
+              <div class="panel-head">
+                <h3>GPA Overview</h3>
+                <span class="panel-meta">Scale 0.00 - 4.00</span>
+              </div>
+              <div class="gpa-meter">
+                <div class="gpa-track">
+                  <div class="gpa-range" id="analysisRangeBar"></div>
+                  <div class="gpa-fill" id="analysisGpaBar"></div>
+                  <div class="gpa-marker" id="analysisTargetMarker"></div>
+                </div>
+                <div class="gpa-legend">
+                  <span>0.00</span>
+                  <span>4.00</span>
+                </div>
+              </div>
+              <div class="gpa-lines">
+                <div>
+                  <span>Current GPA</span>
+                  <strong id="analysisGpaLine">0.00</strong>
+                </div>
+                <div>
+                  <span>Min / Max</span>
+                  <strong id="analysisRangeLine">0.00 - 0.00</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="analysis-panel">
+              <div class="panel-head">
+                <h3>Class Targets</h3>
+                <span class="panel-meta">Avg needed on remaining credits</span>
+              </div>
+              <div class="class-grid">
+                <div class="class-card">
+                  <span>1st Class (>= 3.70)</span>
+                  <strong id="analysisFirstAvg">0.00</strong>
+                  <em id="analysisFirstNote">-</em>
+                </div>
+                <div class="class-card">
+                  <span>2nd Upper (>= 3.30)</span>
+                  <strong id="analysisSecondUpperAvg">0.00</strong>
+                  <em id="analysisSecondUpperNote">-</em>
+                </div>
+                <div class="class-card">
+                  <span>2nd Lower (>= 3.00)</span>
+                  <strong id="analysisSecondLowerAvg">0.00</strong>
+                  <em id="analysisSecondLowerNote">-</em>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="target-row">
+            <label for="analysisTarget">Target GPA</label>
+            <input id="analysisTarget" type="number" step="0.01" min="0" max="4" placeholder="e.g. 3.20" />
+            <button class="btn" id="analysisCheck" type="button">Check Target</button>
+          </div>
+          <p class="note" id="analysisNote">Upload a marksheet to see analysis.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="analysis.js"></script>
+  </body>
+</html>

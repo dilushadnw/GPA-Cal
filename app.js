@@ -45,6 +45,14 @@ const gradeScale = [
   { label: "F", points: 0.0 }
 ];
 
+const STORAGE_KEY = "mydegree-state-v1";
+
+const classTargets = [
+  { key: "First", label: "1st Class", cutoff: 3.7 },
+  { key: "SecondUpper", label: "2nd Upper", cutoff: 3.3 },
+  { key: "SecondLower", label: "2nd Lower", cutoff: 3.0 }
+];
+
 function creditFromCode(code) {
   const match = code.match(/(\d{4})/);
   if (!match) {
@@ -93,9 +101,11 @@ function renderGpaTables() {
         .join("");
 
       return `
-        <div class="year-block">
+        <div class="year-block" data-year="${yearSlug}">
           <div class="year-head">
-            <h3>${year}</h3>
+            <button class="year-toggle" type="button" aria-expanded="true">
+              <span class="year-toggle__label">${year}</span>
+            </button>
             <div class="totals">
               <span>GPA:</span>
               <strong id="gpaYear-${yearSlug}">0.00</strong>
@@ -169,10 +179,156 @@ function calculateGpa() {
       creditsYearEl.textContent = stats.credits;
     }
   });
+
+  renderAnalysis();
+  saveState();
+}
+
+function renderAnalysis() {
+  const filledEl = document.getElementById("analysisFilled");
+  const remainingEl = document.getElementById("analysisRemaining");
+  const needEl = document.getElementById("analysisNeed");
+  const rangeEl = document.getElementById("analysisRange");
+  const noteEl = document.getElementById("analysisNote");
+
+  if (!filledEl || !remainingEl || !needEl || !rangeEl || !noteEl) {
+    return;
+  }
+
+  const selects = Array.from(document.querySelectorAll(".grade-select"));
+  const stats = computeStats(selects);
+
+  filledEl.textContent = String(stats.filledCredits);
+  remainingEl.textContent = String(stats.remainingCredits);
+  rangeEl.textContent = `${stats.minGpa.toFixed(2)} - ${stats.maxGpa.toFixed(2)}`;
+
+  const target = getTargetGpa();
+  if (target === null || stats.remainingCredits === 0) {
+    needEl.textContent = "0.00";
+    noteEl.textContent = stats.remainingCredits === 0 ? "All grades filled" : "Set a target GPA to see the required average.";
+  } else {
+    const requiredTotalPoints = target * stats.totalCredits;
+    const requiredRemainingPoints = requiredTotalPoints - stats.filledPoints;
+    const requiredAverage = requiredRemainingPoints / stats.remainingCredits;
+    const formatted = formatRequiredAverage(requiredAverage, stats.remainingCredits);
+    needEl.textContent = formatted.value === "-" ? "0.00" : formatted.value;
+
+    if (formatted.note === "Not reachable") {
+      noteEl.textContent = "Target is not reachable with remaining credits.";
+    } else if (formatted.note === "Already secured") {
+      noteEl.textContent = "Target already secured.";
+    } else {
+      noteEl.textContent = "Target is reachable with the shown average.";
+    }
+  }
+
+  updateClassTargets(stats);
+  updateGpaGraph(stats, target);
+}
+
+function computeStats(selects) {
+  let filledCredits = 0;
+  let remainingCredits = 0;
+  let filledPoints = 0;
+
+  selects.forEach((select) => {
+    const credit = Number(select.dataset.credit) || 0;
+    if (select.value === "") {
+      remainingCredits += credit;
+      return;
+    }
+    filledCredits += credit;
+    filledPoints += credit * Number(select.value);
+  });
+
+  const totalCredits = filledCredits + remainingCredits;
+  const gpa = filledCredits > 0 ? filledPoints / filledCredits : 0;
+  const minGpa = totalCredits > 0 ? (filledPoints / totalCredits) : 0;
+  const maxGpa = totalCredits > 0 ? ((filledPoints + remainingCredits * 4.0) / totalCredits) : 0;
+
+  return {
+    filledCredits,
+    remainingCredits,
+    filledPoints,
+    totalCredits,
+    gpa,
+    minGpa,
+    maxGpa
+  };
+}
+
+function formatRequiredAverage(requiredAverage, remainingCredits) {
+  if (remainingCredits === 0) {
+    return { value: "-", note: "All grades filled" };
+  }
+
+  if (!Number.isFinite(requiredAverage)) {
+    return { value: "-", note: "Missing credits" };
+  }
+
+  if (requiredAverage > 4.0) {
+    return { value: requiredAverage.toFixed(2), note: "Not reachable" };
+  }
+
+  if (requiredAverage < 0) {
+    return { value: "0.00", note: "Already secured" };
+  }
+
+  return { value: requiredAverage.toFixed(2), note: "Need this avg" };
+}
+
+function updateClassTargets(stats) {
+  classTargets.forEach((target) => {
+    const avgEl = document.getElementById(`analysis${target.key}Avg`);
+    const noteEl = document.getElementById(`analysis${target.key}Note`);
+    if (!avgEl || !noteEl) {
+      return;
+    }
+
+    const requiredTotalPoints = target.cutoff * stats.totalCredits;
+    const requiredRemainingPoints = requiredTotalPoints - stats.filledPoints;
+    const requiredAverage = stats.remainingCredits > 0 ? requiredRemainingPoints / stats.remainingCredits : 0;
+    const formatted = formatRequiredAverage(requiredAverage, stats.remainingCredits);
+    avgEl.textContent = formatted.value;
+    noteEl.textContent = formatted.note;
+  });
+}
+
+function updateGpaGraph(stats, target) {
+  const gpaBar = document.getElementById("analysisGpaBar");
+  const rangeBar = document.getElementById("analysisRangeBar");
+  const targetMarker = document.getElementById("analysisTargetMarker");
+  const gpaLine = document.getElementById("analysisGpaLine");
+  const rangeLine = document.getElementById("analysisRangeLine");
+
+  if (!gpaBar || !rangeBar || !targetMarker || !gpaLine || !rangeLine) {
+    return;
+  }
+
+  const gpaPct = Math.max(0, Math.min(1, stats.gpa / 4)) * 100;
+  const minPct = Math.max(0, Math.min(1, stats.minGpa / 4)) * 100;
+  const maxPct = Math.max(0, Math.min(1, stats.maxGpa / 4)) * 100;
+
+  gpaBar.style.width = `${gpaPct}%`;
+  rangeBar.style.left = `${minPct}%`;
+  rangeBar.style.width = `${Math.max(0, maxPct - minPct)}%`;
+
+  if (target !== null && target >= 0 && target <= 4) {
+    targetMarker.style.display = "block";
+    targetMarker.style.left = `${(target / 4) * 100}%`;
+  } else {
+    targetMarker.style.display = "none";
+  }
+
+  gpaLine.textContent = stats.gpa.toFixed(2);
+  rangeLine.textContent = `${stats.minGpa.toFixed(2)} - ${stats.maxGpa.toFixed(2)}`;
 }
 
 function resetGpa() {
   document.querySelectorAll(".grade-select").forEach((select) => {
+    if (select.dataset.fixed === "true") {
+      return;
+    }
     select.value = "";
     delete select.dataset.autofill;
   });
@@ -307,6 +463,9 @@ function autoFillToTarget() {
 
 function clearAutoFill() {
   document.querySelectorAll(".grade-select").forEach((select) => {
+    if (select.dataset.fixed === "true") {
+      return;
+    }
     if (select.dataset.autofill === "true") {
       select.value = "";
       delete select.dataset.autofill;
@@ -314,6 +473,59 @@ function clearAutoFill() {
   });
   calculateGpa();
   document.getElementById("targetStatus").textContent = "Auto fill cleared";
+}
+
+function saveState() {
+  const state = {
+    marksheet: buildMarksheet(),
+    targetGpa: document.getElementById("targetGpa").value,
+    autoGrade: document.getElementById("autoGrade").value,
+    useCreditMap: document.getElementById("useCreditMap").checked,
+    creditMap: getCreditOverrides()
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    // Ignore storage errors (private mode or quota).
+  }
+}
+
+function loadState() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    raw = null;
+  }
+
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const state = JSON.parse(raw);
+    if (state && state.marksheet) {
+      applyMarksheet(state.marksheet);
+    }
+    if (state && typeof state.targetGpa === "string") {
+      document.getElementById("targetGpa").value = state.targetGpa;
+    }
+    if (state && typeof state.autoGrade === "string") {
+      document.getElementById("autoGrade").value = state.autoGrade;
+    }
+    if (state && typeof state.useCreditMap === "boolean") {
+      document.getElementById("useCreditMap").checked = state.useCreditMap;
+    }
+    if (state && state.creditMap) {
+      document.getElementById("credit4").value = state.creditMap[4] || "";
+      document.getElementById("credit3").value = state.creditMap[3] || "";
+      document.getElementById("credit2").value = state.creditMap[2] || "";
+      document.getElementById("credit1").value = state.creditMap[1] || "";
+    }
+  } catch (error) {
+    // Ignore malformed data.
+  }
 }
 
 function buildMarksheet() {
@@ -326,13 +538,15 @@ function buildMarksheet() {
     const selectedIndex = select.selectedIndex;
     const gradeLabel = selectedIndex > 0 ? select.options[selectedIndex].text : "";
     const gradePoints = select.value !== "" ? Number(select.value) : null;
+    const fixed = select.dataset.fixed === "true";
 
     grades.push({
       code,
       year,
       credit,
       gradeLabel,
-      gradePoints
+      gradePoints,
+      fixed
     });
   });
 
@@ -372,9 +586,42 @@ function applyMarksheet(data) {
 
   document.querySelectorAll(".grade-select").forEach((select) => {
     const entry = gradeMap.get(select.dataset.code);
+    const row = select.closest("tr");
+    const button = row ? row.querySelector(".fix-btn") : null;
     if (!entry) {
       select.value = "";
+      delete select.dataset.fixed;
+      if (row) {
+        row.classList.remove("is-fixed-row");
+      }
+      if (button) {
+        button.classList.remove("is-fixed");
+        button.setAttribute("aria-pressed", "false");
+        button.textContent = "Fix it";
+      }
       return;
+    }
+
+    if (entry.fixed) {
+      select.dataset.fixed = "true";
+      if (row) {
+        row.classList.add("is-fixed-row");
+      }
+      if (button) {
+        button.classList.add("is-fixed");
+        button.setAttribute("aria-pressed", "true");
+        button.textContent = "Fixed";
+      }
+    } else {
+      delete select.dataset.fixed;
+      if (row) {
+        row.classList.remove("is-fixed-row");
+      }
+      if (button) {
+        button.classList.remove("is-fixed");
+        button.setAttribute("aria-pressed", "false");
+        button.textContent = "Fix it";
+      }
     }
 
     const label = entry.gradeLabel;
@@ -415,6 +662,7 @@ function handleUpload(event) {
 }
 
 renderGpaTables();
+loadState();
 calculateGpa();
 
 document.getElementById("calcGpa").addEventListener("click", calculateGpa);
@@ -423,6 +671,14 @@ document.getElementById("autoFill").addEventListener("click", autoFillToTarget);
 document.getElementById("clearAutoFill").addEventListener("click", clearAutoFill);
 document.getElementById("downloadSheet").addEventListener("click", downloadMarksheet);
 document.getElementById("uploadSheet").addEventListener("change", handleUpload);
+document.getElementById("targetGpa").addEventListener("input", renderAnalysis);
+document.getElementById("targetGpa").addEventListener("input", saveState);
+document.getElementById("autoGrade").addEventListener("change", saveState);
+document.getElementById("useCreditMap").addEventListener("change", saveState);
+document.getElementById("credit4").addEventListener("change", saveState);
+document.getElementById("credit3").addEventListener("change", saveState);
+document.getElementById("credit2").addEventListener("change", saveState);
+document.getElementById("credit1").addEventListener("change", saveState);
 document.getElementById("gpaTables").addEventListener("change", (event) => {
   if (event.target.matches(".grade-select")) {
     calculateGpa();
@@ -444,13 +700,33 @@ document.getElementById("gpaTables").addEventListener("click", (event) => {
   const isFixed = select.dataset.fixed === "true";
   if (isFixed) {
     delete select.dataset.fixed;
+    if (row) {
+      row.classList.remove("is-fixed-row");
+    }
     button.classList.remove("is-fixed");
     button.setAttribute("aria-pressed", "false");
-    button.textContent = "Fix";
+    button.textContent = "Fix it";
   } else {
     select.dataset.fixed = "true";
+    if (row) {
+      row.classList.add("is-fixed-row");
+    }
     button.classList.add("is-fixed");
     button.setAttribute("aria-pressed", "true");
     button.textContent = "Fixed";
   }
+  saveState();
+});
+
+document.getElementById("gpaTables").addEventListener("click", (event) => {
+  const toggle = event.target.closest(".year-toggle");
+  if (!toggle) {
+    return;
+  }
+  const block = toggle.closest(".year-block");
+  if (!block) {
+    return;
+  }
+  const isCollapsed = block.classList.toggle("is-collapsed");
+  toggle.setAttribute("aria-expanded", String(!isCollapsed));
 });
